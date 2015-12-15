@@ -1,22 +1,20 @@
 /*
- * Copyright (c) 2015-2015 Philip Foster Jr.
- * Author: Philip Foster <philipfoster462@gmail.com>
+ * Copyright (c) 2015-${year} Philip Foster Jr. <philipfoster462@gmail.com>
  *
- * This file is part of Spam Blocker.
+ * This file is part of SpamBlocker.
  *
- *     Spam Blocker is free software: you can redistribute it and/or modify
+ *     SpamBlocker is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     Spam Blocker is distributed in the hope that it will be useful,
+ *     SpamBlocker is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Spam Blocker.  If not, see <http://www.gnu.org/licenses/>.
- *
+ *     along with SpamBlocker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package net.pfoster.spamblocker.service;
@@ -29,12 +27,6 @@ import android.content.Intent;
  * Created by philip on 12/14/15.
  */
 public class UpdateService extends IntentService {
-
-    // link from https://consumercomplaints.fcc.gov/hc/en-us/articles/205239443
-    //
-    // does this link stay the same each update, or will we need to scrape the fcc page for the download
-    // link each time?
-    private static final String CSV_DOWNLOAD_URL = "https://p2.zdassets.com/hc/theme_assets/513073/200051444/Telemarketing_RoboCall_Weekly_Data_.csv";
 
     public UpdateService() {
         super("UpdateService");
