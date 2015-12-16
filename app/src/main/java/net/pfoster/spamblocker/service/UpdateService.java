@@ -22,11 +22,38 @@ package net.pfoster.spamblocker.service;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.util.Log;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
- * Created by philip on 12/14/15.
+ * This service is responsible for updating the spammer database.
  */
 public class UpdateService extends IntentService {
+
+    // link from https://consumercomplaints.fcc.gov/hc/en-us/articles/205239443
+    //
+    // does this link stay the same each update, or will we need to scrape the fcc page for the download
+    // link each time?
+    // does the fcc upload a delta, or the entire file?
+    // how do we handle duplicates?
+    private static final String CSV_DOWNLOAD_URL = "https://p2.zdassets.com/hc/theme_assets/513073/200051444/Telemarketing_RoboCall_Weekly_Data_.csv";
+    private static final String TAG = "UpdateService";
+
+    /**
+     * Starts an instance of this service.
+     * @param ctx the Context of the application package
+     */
+    public static void start(Context ctx) {
+        Intent svcIntent = new Intent(ctx, UpdateService.class);
+        ctx.startService(svcIntent);
+    }
 
     public UpdateService() {
         super("UpdateService");
@@ -46,6 +73,50 @@ public class UpdateService extends IntentService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
+        // update the shared preferences to reflect the new update.
+        SharedPreferences prefs = getSharedPreferences("net.pfoster.spamblocker", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong("lastDownload", System.currentTimeMillis());
+        editor.apply();
+
         //TODO: Download the spammer list CSV and add entries into the sqlite db
+        String ret;
+        String s = download();
+
     }
+
+    private String download() {
+        HttpURLConnection conn = null;
+        String result = "";
+
+        //noinspection TryWithIdenticalCatches
+        try {
+            URL url = new URL(CSV_DOWNLOAD_URL);
+            conn = (HttpURLConnection) url.openConnection();
+            InputStream is = new BufferedInputStream(conn.getInputStream());
+
+            if (conn.getContentLength() == -1) {
+                throw new IOException("Content-Length header was not set by the server.");
+            }
+
+            byte[] buffer = new byte[conn.getContentLength()];
+            is.read(buffer);
+
+            result = new String(buffer);
+        } catch (MalformedURLException e) {
+            // should never happen.
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO: attempt to re-download the file at a later time
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+
+        return result;
+    }
+
+
 }

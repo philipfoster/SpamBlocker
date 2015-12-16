@@ -19,16 +19,26 @@
 
 package net.pfoster.spamblocker;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import net.pfoster.spamblocker.service.UpdateService;
+
+import java.util.Calendar;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        downloadCsvIfNecessary();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -45,6 +57,43 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+    }
+
+    /**
+     * Will launch the service to download the CSV if it's our first time running, or it's been
+     * a while since it has been updated.
+     */
+    private void downloadCsvIfNecessary() {
+        SharedPreferences prefs = getSharedPreferences("net.pfoster.spamblocker", Context.MODE_PRIVATE);
+        String hasRunKey = "hasRunBefore";
+        String lastDownloadKey = "lastDownload";
+
+        boolean hasRun = prefs.getBoolean(hasRunKey, false);
+        long lastDownload = prefs.getLong(lastDownloadKey, 0);
+
+        // calculate last update + 7 days
+        Calendar nextUpdate = Calendar.getInstance();
+        nextUpdate.setTimeInMillis(lastDownload);
+        nextUpdate.roll(Calendar.HOUR, 168); // 168 = hours in a week
+
+        Calendar now = Calendar.getInstance();
+        now.setTimeInMillis(System.currentTimeMillis());
+
+        // if this is the first run, or it's been 7+ days since the last update,
+        // start the update service.
+        if (!hasRun || now.after(nextUpdate)) {
+            Log.d(TAG, "Updating spammer list");
+            UpdateService.start(this);
+
+            // we don't need to set the lastDownload value in sharedprefs because it is handled
+            // by the UpdateService
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean(hasRunKey, true);
+            editor.apply();
+        } else {
+            Log.d(TAG, "Spammer list is up to date");
+        }
+
     }
 
     @Override
